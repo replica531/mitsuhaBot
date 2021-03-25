@@ -14,7 +14,7 @@ var EV *slack.MessageEvent
 var RTM *slack.RTM
 
 //BotToken Put your slackbot token here
-const BotToken string = "xoxb-3069876617-1921979534688-4VgW7DuSzbvFRzqnW29ljbdw"
+const BotToken string = "xoxb-3069876617-1921979534688-IOyPwRPt882DUliK2d2WXITe"
 
 //DefaultChannel Put your default channel
 const DefaultChannel string = "#replica-memo"
