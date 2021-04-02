@@ -157,13 +157,13 @@ func ListenTo() {
     }else if Temp < 20 {
         temp_comment = "涼しい！"
     }else if Temp < 25 {
-        temp_comment = "快適！"
+        temp_comment = "暖かくて快適！"
     }else if Temp < 30 {
         temp_comment = "少し暑〜い！"
     }else if Temp < 35 {
         temp_comment = "暑い〜!"
     }else {
-        temp_comment = "暑すぎて死んじゃう！"
+        temp_comment = "暑すぎて死にそう！"
     }
 
     wind_comment := ""
@@ -180,7 +180,7 @@ func ListenTo() {
     }else if wind < 20 {
         wind_comment = "風が強いから外出は危険！"
     }else if wind < 25 {
-        wind_comment = "風で家が壊れるかも！"
+        wind_comment = "風で家が壊れそう！"
     }else{
         wind_comment = "強風で大きな被害が出そう！避難して！"
     }
