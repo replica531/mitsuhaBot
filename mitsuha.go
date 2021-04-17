@@ -186,10 +186,10 @@ func ListenTo() {
     }
 
 	switch {
-	    case strings.Contains("こんにちはこんにちは", EV.Text):
+	    case strings.Contains(EV.Text,"天気"):
 		    RTM.SendMessage(RTM.NewOutgoingMessage("こんにちはこんにちは、<@"+EV.User+">さん！今の京都市の天気は"+description+"やよ！"+weather_comment+"気温は"+temp+"度。"+temp_comment+wind_comment, EV.Channel))
 		    return
-        case strings.Contains("君の名は。", EV.Text):
+        case strings.Contains(EV.Text,"君の名は。"):
 		    RTM.SendMessage(RTM.NewOutgoingMessage("三葉！名前は三葉！", EV.Channel))
 		    return
 	}
