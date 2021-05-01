@@ -4,6 +4,7 @@ import (
 	"fmt"
     "strconv"
 	"strings"
+    "time"
 	"encoding/json"
     "io/ioutil"
     "log"
@@ -65,26 +66,33 @@ const BotToken string = "xoxb-3069876617-1921979534688-IOyPwRPt882DUliK2d2WXITe"
 //DefaultChannel Put your default channel
 const DefaultChannel string = "#replica-memo"
 
+//#replica-memoのID
+const ChannelID string ="C01SGM52Y6Q"
+
+var api *slack.Client = slack.New(BotToken)
+
 func main() {
-	var api *slack.Client = slack.New(BotToken)
 
 	RTM = api.NewRTM()
 
 	go RTM.ManageConnection()
 
-	for msg := range RTM.IncomingEvents {
-		switch ev := msg.Data.(type) {
-		case *slack.ConnectedEvent:
-			fmt.Printf("Start connection with Slack\n")
-		case *slack.MessageEvent:
-			EV = ev
-			ListenTo()
-		}
-	}
+    for{
+        for msg := range RTM.IncomingEvents {
+            switch ev := msg.Data.(type) {
+                case *slack.ConnectedEvent:
+                    fmt.Printf("Start connection with Slack\n")
+                case *slack.MessageEvent:
+                    EV = ev
+                    ListenTo()
+                default:
+                    Reglarsend()
+            }
+        }
+    }
 }
 
-//ListenTo excute functions under suitable conditions
-func ListenTo() {
+func WhetherForecast() string {
     values := url.Values{}
     baseUrl := "http://api.openweathermap.org/data/2.5/weather?"
 
@@ -147,7 +155,7 @@ func ListenTo() {
     temp_comment := ""
 
     if Temp < 0 {
-        temp_comment = "寒すぎ！"
+        temp_comment = "寒すぎる！"
     }else if Temp < 5 {
         temp_comment = "寒い！"
     }else if Temp < 10 {
@@ -157,13 +165,13 @@ func ListenTo() {
     }else if Temp < 20 {
         temp_comment = "涼しい！"
     }else if Temp < 25 {
-        temp_comment = "暖かくて快適！"
+        temp_comment = "暖かい！"
     }else if Temp < 30 {
         temp_comment = "少し暑〜い！"
     }else if Temp < 35 {
         temp_comment = "暑い〜!"
     }else {
-        temp_comment = "暑すぎて死にそう！"
+        temp_comment = "暑すぎる！"
     }
 
     wind_comment := ""
@@ -185,9 +193,32 @@ func ListenTo() {
         wind_comment = "強風で大きな被害が出そう！避難して！"
     }
 
+    forecast :="今の京都市の天気は"+description+"やよ！"+weather_comment+"気温は"+temp+"度。"+temp_comment+wind_comment
+
+    return forecast
+}
+
+func Reglarsend(){
+    t := time.Date(2021, 5, 1, 7, 00, 0, 0, time.Local)
+    var now = time.Now()
+    if now.Hour() != t.Hour() ||
+        now.Minute() != t.Minute() {
+    }else{
+        forecast := WhetherForecast()
+        api.PostMessage(
+            ChannelID,
+            slack.MsgOptionText("朝の天気予報の時間！"+forecast, false),
+        )
+        time.Sleep(time.Minute)
+    }
+}
+
+//ListenTo excute functions under suitable conditions
+func ListenTo() {
 	switch {
 	    case strings.Contains(EV.Text,"天気"):
-		    RTM.SendMessage(RTM.NewOutgoingMessage("こんにちはこんにちは、<@"+EV.User+">さん！今の京都市の天気は"+description+"やよ！"+weather_comment+"気温は"+temp+"度。"+temp_comment+wind_comment, EV.Channel))
+            forecast := WhetherForecast()
+		    RTM.SendMessage(RTM.NewOutgoingMessage("こんにちはこんにちは、<@"+EV.User+">さん！"+forecast, EV.Channel))
 		    return
         case strings.Contains(EV.Text,"君の名は。"):
 		    RTM.SendMessage(RTM.NewOutgoingMessage("三葉！名前は三葉！", EV.Channel))
