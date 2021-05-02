@@ -1,15 +1,16 @@
 package main
 
 import (
-	"fmt"
-    "strconv"
-	"strings"
-    "time"
 	"encoding/json"
-    "io/ioutil"
-    "log"
-    "net/http"
-    "net/url"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/slack-go/slack"
 )
 
@@ -92,7 +93,7 @@ func main() {
     }
 }
 
-func WhetherForecast() string {
+func WhetherForecast() (forecast_now string ,forecast_today string) {
     values := url.Values{}
     baseUrl := "http://api.openweathermap.org/data/2.5/weather?"
 
@@ -103,7 +104,7 @@ func WhetherForecast() string {
 
     response, err := http.Get(baseUrl + values.Encode())
 
-    description := ""
+    description := ""//天気
 
     if err != nil {   // エラーハンドリング
         log.Fatalf("Connection Error: %v", err)
@@ -133,7 +134,7 @@ func WhetherForecast() string {
     weather := data.Weather[0].Main
 
     if weather == "Thunderstorm" {
-        weather_comment = "雷怖い！"
+        weather_comment = "雷が鳴っているから気をつけて！"
     }else if weather == "Drizzle" {
         weather_comment = "周りが見えづらいから気をつけて！"
     }else if weather == "Rain" {
@@ -147,68 +148,38 @@ func WhetherForecast() string {
     }else {
         weather_comment = "外は危険がいっぱい！"
     }
-
-    Temp := data.Main.Temp //現在の気温
+    Temp := data.Main.Temp
     Temp -= 273.15
-    temp := strconv.FormatFloat(Temp, 'f', 1, 64)
+    temp := strconv.FormatFloat(Temp, 'f', 1, 64)//現在の気温(摂氏)
 
-    temp_comment := ""
+    Temp_max := data.Main.TempMax
+    Temp_min := data.Main.TempMin
+    Temp_max -= 273.15
+    Temp_min -= 273.15
+    temp_max := strconv.FormatFloat(Temp_max, 'f', 1, 64)//最高気温(摂氏)
+    temp_min := strconv.FormatFloat(Temp_min, 'f', 1, 64)//最低気温(摂氏)
 
-    if Temp < 0 {
-        temp_comment = "寒すぎる！"
-    }else if Temp < 5 {
-        temp_comment = "寒い！"
-    }else if Temp < 10 {
-        temp_comment = "少し寒い！"
-    }else if Temp < 15 {
-        temp_comment ="肌寒いね！"
-    }else if Temp < 20 {
-        temp_comment = "涼しい！"
-    }else if Temp < 25 {
-        temp_comment = "暖かい！"
-    }else if Temp < 30 {
-        temp_comment = "少し暑〜い！"
-    }else if Temp < 35 {
-        temp_comment = "暑い〜!"
-    }else {
-        temp_comment = "暑すぎる！"
-    }
+    Wind := data.Wind.Speed
+    wind := strconv.FormatFloat(Wind, 'f', 1, 64)//現在の風速
 
-    wind_comment := ""
-    wind := data.Wind.Speed
+    forecast_now = "天候: "+description+"\n気温: "+temp+"°C\n"+"風速: "+wind+"m/s\n"+weather_comment
+    forecast_today = "天候: "+description+"\n最高気温: "+temp_max+"°C\n最低気温: "+temp_min+"°C\n風速: "+wind+"m/s\n"+weather_comment
 
-    if wind < 1.5 {
-        wind_comment = "風もほとんど吹いてなさそう！"
-    }else if wind < 5.0 {
-        wind_comment = "そよ風が吹いてるよ！"
-    }else if wind < 10 {
-        wind_comment = "少し風が強いかも！"
-    }else if wind < 15 {
-        wind_comment = "強い風が吹いてるから気をつけて！"
-    }else if wind < 20 {
-        wind_comment = "風が強いから外出は危険！"
-    }else if wind < 25 {
-        wind_comment = "風で家が壊れそう！"
-    }else{
-        wind_comment = "強風で大きな被害が出そう！避難して！"
-    }
-
-    forecast :="今の京都市の天気は"+description+"やよ！"+weather_comment+"気温は"+temp+"度。"+temp_comment+wind_comment
-
-    return forecast
+    return forecast_now,forecast_today
 }
 
 func Reglarsend(){
-    t := time.Date(2021, 5, 1, 7, 00, 0, 0, time.Local)
+    t := time.Date(2021, 5, 1, 7, 00, 0, 0, time.Local)//定時投稿の投稿時間設定
     var now = time.Now()
     if now.Hour() != t.Hour() ||
         now.Minute() != t.Minute() {
     }else{
-        forecast := WhetherForecast()
+        _,forecast_today := WhetherForecast()
         api.PostMessage(
             ChannelID,
-            slack.MsgOptionText("朝の天気予報の時間！"+forecast, false),
+            slack.MsgOptionText("朝の天気予報の時間やよ！\n今日の京都市の天気はこんな感じ！"+forecast_today, false),
         )
+
         time.Sleep(time.Minute)
     }
 }
@@ -217,8 +188,8 @@ func Reglarsend(){
 func ListenTo() {
 	switch {
 	    case strings.Contains(EV.Text,"天気"):
-            forecast := WhetherForecast()
-		    RTM.SendMessage(RTM.NewOutgoingMessage("こんにちはこんにちは、<@"+EV.User+">さん！"+forecast, EV.Channel))
+            forecast_now,_ := WhetherForecast()
+		    RTM.SendMessage(RTM.NewOutgoingMessage("こんにちはこんにちは、<@"+EV.User+">さん！\n現在の京都市の天気はこんな感じやよ！\n"+forecast_now, EV.Channel))
 		    return
         case strings.Contains(EV.Text,"君の名は。"):
 		    RTM.SendMessage(RTM.NewOutgoingMessage("三葉！名前は三葉！", EV.Channel))
