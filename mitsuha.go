@@ -6,54 +6,29 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
-
 	"github.com/slack-go/slack"
 )
 
+
 type WeatherResult struct {
-    Coord struct {
-        Lon float64 `json:"lon"`
-        Lat float64 `json:"lat"`
-    } `json:"coord"`
-    Weather []struct {
-        ID          int    `json:"id"`
-        Main        string `json:"main"`
-        Description string `json:"description"`
-        Icon        string `json:"icon"`
-    } `json:"weather"`
-    Base string `json:"base"`
-    Main struct {
-        Temp      float64 `json:"temp"`
-        FeelsLike float64 `json:"feels_like"`
-        TempMin   float64 `json:"temp_min"`
-        TempMax   float64 `json:"temp_max"`
-        Pressure  int     `json:"pressure"`
-        Humidity  int     `json:"humidity"`
-    } `json:"main"`
-    Visibility int `json:"visibility"`
-    Wind       struct {
-        Speed float64 `json:"speed"`
-    } `json:"wind"`
-    Clouds struct {
-        All int `json:"all"`
-    } `json:"clouds"`
-    Dt  int `json:"dt"`
-    Sys struct {
-        Type    int    `json:"type"`
-        ID      int    `json:"id"`
-        Country string `json:"country"`
-        Sunrise int    `json:"sunrise"`
-        Sunset  int    `json:"sunset"`
-    } `json:"sys"`
-    Timezone int    `json:"timezone"`
-    ID       int    `json:"id"`
-    Name     string `json:"name"`
-    Cod      json.Number    `json:"cod"`
+	Name     string `json:"city_name"`
+	Data 	[]*Data `json:"data"`
 }
+
+type Data struct {
+	Datetime string `json:"datetime"`
+	Temp float64 	 `json:"temp"`
+	Max_temp float64 `json:"max_temp"`
+	Min_temp float64 `json:"min_temp"`
+	Pop int			`json:"pop"`//降水確率
+	Weather struct {
+		Description string `json:"description"`
+	} `json:"weather"`
+}
+
 
 //EV put new slack events
 var EV *slack.MessageEvent
@@ -93,31 +68,26 @@ func main() {
     }
 }
 
-func WhetherForecast() (forecast_now string ,forecast_today string) {
-    values := url.Values{}
-    baseUrl := "http://api.openweathermap.org/data/2.5/weather?"
+func WhetherForecast() (forecast_today string ,forecast_tomorrow string) {
+    url := "https://weatherbit-v1-mashape.p.rapidapi.com/forecast/daily?lat=35.026244&lon=135.780822&lang=ja"
 
-    // query
-    values.Add("appid", "3e2c765871b9be3be5864647fb2d23da")    // OpenWeatherのAPIKey
-    values.Add("id","1857910") //京都市
-    values.Add("lang","ja") //日本語
+    response, err := http.NewRequest("GET", url, nil)
 
-    response, err := http.Get(baseUrl + values.Encode())
+	response.Header.Add("x-rapidapi-key", "a9959c2822mshb7fcf665a4b5bddp16bc17jsn2392fa173805")
+	response.Header.Add("x-rapidapi-host", "weatherbit-v1-mashape.p.rapidapi.com")
 
-    description := ""//天気
+	res, _ := http.DefaultClient.Do(response)
 
     if err != nil {   // エラーハンドリング
         log.Fatalf("Connection Error: %v", err)
-         description="不明"
     }
 
-   // 遅延
-    defer response.Body.Close()
+    // 遅延
+    defer res.Body.Close()
 
-    body, err := ioutil.ReadAll(response.Body)
+    body, err := ioutil.ReadAll(res.Body)
     if err != nil {
         log.Fatalf("Connection Error: %v", err)
-        description="不明"
     }
 
     jsonBytes := ([]byte)(body)
@@ -126,71 +96,65 @@ func WhetherForecast() (forecast_now string ,forecast_today string) {
         log.Fatalf("Connection Error: %v", err)
     }
 
-    if data.Weather != nil {
-        description= data.Weather[0].Description
-    }
+    datetime_today := data.Data[0].Datetime
+    weather_today := data.Data[0].Weather.Description
 
-    weather_comment := "" //天気についてのコメント
-    weather := data.Weather[0].Main
+	Temp_today := data.Data[0].Temp
+    temp_today := strconv.FormatFloat(Temp_today, 'f', 1, 64)//本日の平均気温
+	Max_temp_today := data.Data[0].Max_temp
+    max_temp_today := strconv.FormatFloat(Max_temp_today, 'f', 1, 64)//本日の最高気温
+	Min_temp_today := data.Data[0].Min_temp
+    min_temp_today := strconv.FormatFloat(Min_temp_today, 'f', 1, 64)//本日の最低気温
 
-    if weather == "Thunderstorm" {
-        weather_comment = "雷が鳴っているから気をつけて！"
-    }else if weather == "Drizzle" {
-        weather_comment = "周りが見えづらいから気をつけて！"
-    }else if weather == "Rain" {
-        weather_comment = "外出する時は傘を忘れないでね！"
-    }else if weather == "Snow" {
-        weather_comment = "雪だるま作ろう！"
-    }else if weather == "Clear" {
-        weather_comment = "洗濯日和！"
-    }else if weather == "Clouds" {
-        weather_comment = "雲がいっぱい！"
-    }else {
-        weather_comment = "外は危険がいっぱい！"
-    }
-    Temp := data.Main.Temp
-    Temp -= 273.15
-    temp := strconv.FormatFloat(Temp, 'f', 1, 64)//現在の気温(摂氏)
+	Pop_today := data.Data[0].Pop
+	pop_today := strconv.Itoa(Pop_today)//本日の降水確率
 
-    Temp_max := data.Main.TempMax
-    Temp_min := data.Main.TempMin
-    Temp_max -= 273.15
-    Temp_min -= 273.15
-    temp_max := strconv.FormatFloat(Temp_max, 'f', 1, 64)//最高気温(摂氏)
-    temp_min := strconv.FormatFloat(Temp_min, 'f', 1, 64)//最低気温(摂氏)
+    datetimt_tomorrow := data.Data[1].Datetime
+    weathet_tomorrow := data.Data[1].Weather.Description
 
-    Wind := data.Wind.Speed
-    wind := strconv.FormatFloat(Wind, 'f', 1, 64)//現在の風速
+	Temt_tomorrow := data.Data[1].Temp
+    temt_tomorrow := strconv.FormatFloat(Temt_tomorrow, 'f', 1, 64)//本日の平均気温
+	Max_temt_tomorrow := data.Data[1].Max_temp
+    max_temt_tomorrow := strconv.FormatFloat(Max_temt_tomorrow, 'f', 1, 64)//本日の最高気温
+	Min_temt_tomorrow := data.Data[1].Min_temp
+    min_temt_tomorrow := strconv.FormatFloat(Min_temt_tomorrow, 'f', 1, 64)//本日の最低気温
 
-    forecast_now = "天候: "+description+"\n気温: "+temp+"°C\n"+"風速: "+wind+"m/s\n"+weather_comment
-    forecast_today = "天候: "+description+"\n最高気温: "+temp_max+"°C\n最低気温: "+temp_min+"°C\n風速: "+wind+"m/s\n"+weather_comment
+	Pot_tomorrow := data.Data[1].Pop
+	pot_tomorrow := strconv.Itoa(Pot_tomorrow)//本日の降水確率
 
-    return forecast_now,forecast_today
+    forecast_today = "日付: "+datetime_today+"\n天気: "+weather_today+"\n平均気温: "+temp_today+"°C\n最高気温: "+max_temp_today+"°C\n最低気温: "+min_temp_today+"°C\n降水確率: "+pop_today+"%\n"
+    forecast_tomorrow = "日付: "+datetimt_tomorrow+"\n天気: "+weathet_tomorrow+"\n平均気温: "+temt_tomorrow+"°C\n最高気温: "+max_temt_tomorrow+"°C\n最低気温: "+min_temt_tomorrow+"°C\n降水確率: "+pot_tomorrow+"%\n"
+
+    return forecast_today,forecast_tomorrow
 }
 
 func Reglarsend(){
-    t := time.Date(2021, 5, 1, 7, 00, 0, 0, time.Local)//定時投稿の投稿時間設定
+    morning := time.Date(2021, 5, 1, 7, 00, 0, 0, time.Local)//朝の投稿時間設定
+    night := time.Date(2021, 5, 1, 20, 00, 0, 0, time.Local)//の投稿時間設定
+
     var now = time.Now()
-    if now.Hour() != t.Hour() ||
-        now.Minute() != t.Minute() {
-    }else{
-        _,forecast_today := WhetherForecast()
+    if (now.Hour() == morning.Hour() &&
+    now.Minute() == morning.Minute()){
+        forecast_today,_ := WhetherForecast()
         api.PostMessage(
             ChannelID,
             slack.MsgOptionText("朝の天気予報の時間やよ！\n今日の京都市の天気はこんな感じ！\n"+forecast_today, false),
         )
-
-        time.Sleep(time.Minute)
+        time.Sleep(time.Minute)//一分間停止
+    }else if (now.Hour() == night.Hour() &&
+    now.Minute() == night.Minute()){
+        _,forecast_tomorrow:= WhetherForecast()
+        api.PostMessage(
+            ChannelID,
+            slack.MsgOptionText("夜の天気予報の時間やよ！\n明日の京都市の天気はこんな感じ！\n"+forecast_tomorrow, false),
+        )
+        time.Sleep(time.Minute)//一分間停止
     }
 }
 
 //ListenTo excute functions under suitable conditions
 func ListenTo() {
 	switch {
-	    case strings.Contains(EV.Text,"天気"):
-            forecast_now,_ := WhetherForecast()
-		    RTM.SendMessage(RTM.NewOutgoingMessage("こんにちはこんにちは、<@"+EV.User+">さん！\n現在の京都市の天気はこんな感じやよ！\n"+forecast_now, EV.Channel))
-		    return
         case strings.Contains(EV.Text,"君の名は。"):
 		    RTM.SendMessage(RTM.NewOutgoingMessage("三葉！名前は三葉！", EV.Channel))
 		    return
