@@ -177,7 +177,7 @@ func Reglarsend(){
         _,forecast_today := WhetherForecast()
         api.PostMessage(
             ChannelID,
-            slack.MsgOptionText("朝の天気予報の時間やよ！\n今日の京都市の天気はこんな感じ！"+forecast_today, false),
+            slack.MsgOptionText("朝の天気予報の時間やよ！\n今日の京都市の天気はこんな感じ！\n"+forecast_today, false),
         )
 
         time.Sleep(time.Minute)
