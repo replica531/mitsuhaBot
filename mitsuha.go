@@ -19,11 +19,13 @@ type WeatherResult struct {
 }
 
 type Data struct {
-	Datetime string `json:"datetime"`
-	Temp float64 	 `json:"temp"`
-	Max_temp float64 `json:"max_temp"`
-	Min_temp float64 `json:"min_temp"`
-	Pop int			`json:"pop"`//降水確率
+	Datetime string  `json:"datetime"`
+    Wind_spd float64  `json:"wind_spd"`
+    Wind_cdir string `json:"wind_cdir"`
+	Temp float64 	  `json:"temp"`
+	Max_temp float64  `json:"max_temp"`
+	Min_temp float64  `json:"min_temp"`
+	Pop int			 `json:"pop"`//降水確率
 	Weather struct {
 		Description string `json:"description"`
 	} `json:"weather"`
@@ -109,7 +111,11 @@ func WhetherForecast() (forecast_today string ,forecast_tomorrow string) {
 	Pop_today := data.Data[0].Pop
 	pop_today := strconv.Itoa(Pop_today)//本日の降水確率
 
-    datetimt_tomorrow := data.Data[1].Datetime
+    Wind_spd_today := data.Data[0].Wind_spd
+    wind_spd_today := strconv.FormatFloat(Wind_spd_today, 'f', 1, 64)//本日の平均風速
+    wind_cdir_today := data.Data[0].Wind_cdir
+
+    datetime_tomorrow := data.Data[1].Datetime
     weathet_tomorrow := data.Data[1].Weather.Description
 
 	Temt_tomorrow := data.Data[1].Temp
@@ -122,8 +128,12 @@ func WhetherForecast() (forecast_today string ,forecast_tomorrow string) {
 	Pot_tomorrow := data.Data[1].Pop
 	pot_tomorrow := strconv.Itoa(Pot_tomorrow)//本日の降水確率
 
-    forecast_today = "日付: "+datetime_today+"\n天気: "+weather_today+"\n平均気温: "+temp_today+"°C\n最高気温: "+max_temp_today+"°C\n最低気温: "+min_temp_today+"°C\n降水確率: "+pop_today+"%\n"
-    forecast_tomorrow = "日付: "+datetimt_tomorrow+"\n天気: "+weathet_tomorrow+"\n平均気温: "+temt_tomorrow+"°C\n最高気温: "+max_temt_tomorrow+"°C\n最低気温: "+min_temt_tomorrow+"°C\n降水確率: "+pot_tomorrow+"%\n"
+    Wind_spd_tomorrow := data.Data[0].Wind_spd
+    wind_spd_tomorrow := strconv.FormatFloat(Wind_spd_tomorrow, 'f', 1, 64)//本日の平均風速
+    wind_cdir_tomorrow := data.Data[0].Wind_cdir
+
+    forecast_today = "日付: "+datetime_today+"\n天気: "+weather_today+"\n平均気温: "+temp_today+"°C\n最高気温: "+max_temp_today+"°C\n最低気温: "+min_temp_today+"°C\n降水確率: "+pop_today+"%\n平均風速: "+wind_spd_today+"\n風向き:  "+wind_cdir_today
+    forecast_tomorrow = "日付: "+datetime_tomorrow+"\n天気: "+weathet_tomorrow+"\n平均気温: "+temt_tomorrow+"°C\n最高気温: "+max_temt_tomorrow+"°C\n最低気温: "+min_temt_tomorrow+"°C\n降水確率: "+pot_tomorrow+"%\n平均風速: "+wind_spd_tomorrow+"\n風向き:  "+wind_cdir_tomorrow
 
     return forecast_today,forecast_tomorrow
 }
