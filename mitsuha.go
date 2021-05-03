@@ -132,8 +132,8 @@ func WhetherForecast() (forecast_today string ,forecast_tomorrow string) {
     wind_spd_tomorrow := strconv.FormatFloat(Wind_spd_tomorrow, 'f', 1, 64)//本日の平均風速
     wind_cdir_tomorrow := data.Data[0].Wind_cdir
 
-    forecast_today = "日付: "+datetime_today+"\n天気: "+weather_today+"\n平均気温: "+temp_today+"°C\n最高気温: "+max_temp_today+"°C\n最低気温: "+min_temp_today+"°C\n降水確率: "+pop_today+"%\n平均風速: "+wind_spd_today+"\n風向き:  "+wind_cdir_today
-    forecast_tomorrow = "日付: "+datetime_tomorrow+"\n天気: "+weathet_tomorrow+"\n平均気温: "+temt_tomorrow+"°C\n最高気温: "+max_temt_tomorrow+"°C\n最低気温: "+min_temt_tomorrow+"°C\n降水確率: "+pot_tomorrow+"%\n平均風速: "+wind_spd_tomorrow+"\n風向き:  "+wind_cdir_tomorrow
+    forecast_today = "日付: "+datetime_today+"\n天気: "+weather_today+"\n平均気温: "+temp_today+"°C\n最高気温: "+max_temp_today+"°C\n最低気温: "+min_temp_today+"°C\n降水確率: "+pop_today+"%\n平均風速: "+wind_spd_today+"m/s\n風向き:  "+wind_cdir_today
+    forecast_tomorrow = "日付: "+datetime_tomorrow+"\n天気: "+weathet_tomorrow+"\n平均気温: "+temt_tomorrow+"°C\n最高気温: "+max_temt_tomorrow+"°C\n最低気温: "+min_temt_tomorrow+"°C\n降水確率: "+pot_tomorrow+"%\n平均風速: "+wind_spd_tomorrow+"m/s\n風向き:  "+wind_cdir_tomorrow
 
     return forecast_today,forecast_tomorrow
 }
@@ -170,3 +170,4 @@ func ListenTo() {
 		    return
 	}
 }
+//scp -r slackbots/mitsuha.go replica@kmc.gr.jp:~/Program/slackbots/
