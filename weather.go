@@ -143,5 +143,3 @@ func ListenTo() {
 		    return
 	}
 }
-
-///direct/content/my.json

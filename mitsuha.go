@@ -26,4 +26,4 @@ func main() {
     }
 }
 
-//scp -r slackbots/mitsuha.go replica@kmc.gr.jp:~/Program/slackbots/
+//scp -r mitsuhaBot replica@kmc.gr.jp:~/Program
